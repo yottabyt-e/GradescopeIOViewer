@@ -27,7 +27,7 @@
             No folder selected            
         </Label>
 
-        <ListBox Grid.Column="0" Grid.Row="1" x:Name="CasesBox" Width="200" Height="Auto" SelectionChanged="OpenCase" SelectionMode="Single">
+        <ListBox Grid.Column="0" Grid.Row="1" x:Name="CasesBox" Width="225" Height="Auto" SelectionChanged="OpenCase" SelectionMode="Single">
             
         </ListBox>
 
