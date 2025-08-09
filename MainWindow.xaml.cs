@@ -34,6 +34,14 @@ namespace GradescopeIOViewer
 
         private void OpenCase(object sender, SelectionChangedEventArgs e)
         {
+            if (e.AddedItems.Count == 0)
+            {
+                inputText.Text = "";
+                outputText.Text = "";
+
+                return;
+            }
+
             string name = (string)e.AddedItems[0];
             int index = names.IndexOf(name);
 
@@ -104,11 +112,6 @@ namespace GradescopeIOViewer
             this.Title = windowTitle;
 
             folderLabel.Content = $"Folder: \"{root}\"";
-        }
-
-        private void UpdateOptions()
-        {
-
         }
     }
 }
