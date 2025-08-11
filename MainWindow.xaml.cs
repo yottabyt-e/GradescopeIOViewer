@@ -1,16 +1,9 @@
-﻿using System.Text;
+﻿using Microsoft.Win32;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.IO.Compression;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Microsoft.Win32;
-using System.IO;
-using System.Collections.ObjectModel;
 
 namespace GradescopeIOViewer
 {
@@ -58,6 +51,31 @@ namespace GradescopeIOViewer
             {
                 root = openFolderDialog.FolderName;
 
+                UpdateData();
+            }
+        }
+
+        private void ButtonOpenArchive_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialogue = new OpenFileDialog()
+            {
+                Filter = "Zip Archives (*.zip)|*.zip"
+            };
+            bool? result = openFileDialogue.ShowDialog();
+
+            if (result == true)
+            {
+                string tempPath = Path.GetTempPath() + "\\LsGradescopeIOViewer";
+                if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
+
+                ZipFile.ExtractToDirectory(openFileDialogue.FileName, tempPath);
+
+                if (!Directory.Exists(tempPath + "\\Inputs") && Directory.GetDirectories(tempPath).Count() == 1)
+                {
+                    tempPath = Directory.GetDirectories(tempPath).First();
+                }
+
+                root = tempPath;
                 UpdateData();
             }
         }
@@ -112,6 +130,17 @@ namespace GradescopeIOViewer
             this.Title = windowTitle;
 
             folderLabel.Content = $"Folder: \"{root}\"";
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+
+            try
+            {
+                string tempPath = Path.GetTempPath() + "\\LsGradescopeIOViewer";
+                if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
+            } catch { }
         }
     }
 }
