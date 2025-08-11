@@ -70,13 +70,21 @@ namespace GradescopeIOViewer
 
                 ZipFile.ExtractToDirectory(openFileDialogue.FileName, tempPath);
 
-                if (!Directory.Exists(tempPath + "\\Inputs") && Directory.GetDirectories(tempPath).Count() == 1)
+                List<string> validDirectories = (new string[] { tempPath }.Concat(Directory.GetDirectories(tempPath)))
+                    .Where(dir => Directory.Exists(dir + "\\Inputs") && Directory.Exists(dir + "\\RefOutputs"))
+                    .ToList();
+                if (validDirectories.Count == 0)
                 {
-                    tempPath = Directory.GetDirectories(tempPath).First();
+                    MessageBox.Show("The selected archive does not contain any valid tasks.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                } else if (validDirectories.Count == 1)
+                {
+                    root = validDirectories[0];
+                    UpdateData();
+                } else
+                {
+                    MessageBox.Show(String.Join("\n", validDirectories));
                 }
-
-                root = tempPath;
-                UpdateData();
             }
         }
 
