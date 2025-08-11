@@ -13,7 +13,9 @@ namespace GradescopeIOViewer
     public partial class MainWindow : Window
     {
 
-        string root;
+        string openedPath;
+        string[] roots;
+        bool[] rootsShown;
         public ObservableCollection<string> names = new ObservableCollection<string> { };
         List<string> inputs = new List<string> { };
         List<string> outputs = new List<string> { };
@@ -38,6 +40,18 @@ namespace GradescopeIOViewer
             string name = (string)e.AddedItems[0];
             int index = names.IndexOf(name);
 
+            if (name.StartsWith("➕") || name.StartsWith("➖"))
+            {
+                // Project folded / unfolded
+                int projectIndex = names.Where(n => n.StartsWith("➕") || n.StartsWith("➖")).ToList().IndexOf(name);
+                rootsShown[projectIndex] = !rootsShown[projectIndex];
+                UpdateData();
+
+                if (e.RemovedItems.Count != 0) CasesBox.SelectedIndex = names.IndexOf((string)e.RemovedItems[0]);
+                else CasesBox.SelectedIndex = -1;
+                return;
+            }
+
             inputText.Text = inputs[index];
             outputText.Text = outputs[index];
         }
@@ -49,9 +63,7 @@ namespace GradescopeIOViewer
 
             if (result == true)
             {
-                root = openFolderDialog.FolderName;
-
-                UpdateData();
+                LoadFolder(openFolderDialog.FolderName, openFolderDialog.FolderName, "folder");
             }
         }
 
@@ -70,32 +82,47 @@ namespace GradescopeIOViewer
 
                 ZipFile.ExtractToDirectory(openFileDialogue.FileName, tempPath);
 
-                if (!Directory.Exists(tempPath + "\\Inputs") && Directory.GetDirectories(tempPath).Count() == 1)
-                {
-                    tempPath = Directory.GetDirectories(tempPath).First();
-                }
-
-                root = tempPath;
-                UpdateData();
+                LoadFolder(tempPath, openFileDialogue.FileName, "archive");
             }
+        }
+
+        private void LoadFolder(string path, string name, string type)
+        {
+            List<string> validDirectories = (new string[] { path }.Concat(Directory.GetDirectories(path)))
+                    .Where(dir => Directory.Exists(dir + "\\Inputs") && Directory.Exists(dir + "\\RefOutputs"))
+                    .ToList();
+            if (validDirectories.Count == 0)
+            {
+                MessageBox.Show($"The selected {type} does not contain any valid test cases.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            roots = validDirectories.ToArray();
+            rootsShown = Enumerable.Repeat(false, roots.Length).ToArray();
+            openedPath = name;
+            UpdateData();
         }
 
         private void UpdateData()
         {
-            if (root == null)
+            if (roots == null || roots.Length == 0)
             {
                 // error dialog
                 MessageBox.Show("No file path was provided.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            if (!Directory.Exists(root))
+            roots = roots.Where(Directory.Exists).ToArray();
+            if (roots.Length == 0)
             {
                 MessageBox.Show("The selected folder does not exist, or is unable to be accessed.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            if (!Directory.Exists(root + "\\Inputs") || !Directory.Exists(root + "\\RefOutputs"))
+            roots = roots
+                .Where(path => Directory.Exists(Path.Join(path, "Inputs")) && Directory.Exists(Path.Join(path, "RefOutputs")))
+                .ToArray();
+            if (roots.Length == 0)
             {
                 MessageBox.Show("The selected folder does not contain the \"Inputs\" and \"RefOutputs\" subfolder. Ensure you have selected the right folder, then try again.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
@@ -105,31 +132,45 @@ namespace GradescopeIOViewer
             inputs.Clear();
             outputs.Clear();
 
-            string[] files = Directory.GetFiles(root + "\\Inputs");
-
-            foreach (string file in files)
+            int i = 0;
+            foreach (string root in roots)
             {
-                string fileName = file.Substring((root + "\\Inputs\\").Length);
-                string name = fileName.Substring(0, fileName.Length - 4);
-
-                string refOutputPath = root + "\\RefOutputs\\RefOutput_" + fileName;
-
-                if (!File.Exists(refOutputPath))
+                bool isShown = roots.Length == 1 || rootsShown[i++];
+                if (roots.Length != 1)
                 {
-                    continue;
+                    names.Add((isShown ? "➖ " : "➕ ") + root.Split("\\").Last());
+                    inputs.Add("");
+                    outputs.Add("");
                 }
+                if (!isShown) continue;
 
-                names.Add(name);
-                inputs.Add(File.ReadAllText(file));
-                outputs.Add(File.ReadAllText(refOutputPath));
+                string[] files = Directory.GetFiles(root + "\\Inputs");
+
+                foreach (string file in files)
+                {
+                    string fileName = file.Substring((root + "\\Inputs\\").Length);
+                    string name = fileName.Substring(0, fileName.Length - 4);
+                    if (roots.Length != 1) name = "└─ " + name;
+
+                    string refOutputPath = root + "\\RefOutputs\\RefOutput_" + fileName;
+
+                    if (!File.Exists(refOutputPath))
+                    {
+                        continue;
+                    }
+
+                    names.Add(name);
+                    inputs.Add(File.ReadAllText(file));
+                    outputs.Add(File.ReadAllText(refOutputPath));
+                }
             }
 
-            string[] pathArray = root.Split("\\");
+            string[] pathArray = openedPath.Split("\\");
             string windowTitle = $"\"{pathArray[pathArray.Length - 1]}\" - L's Gradescope I/O Viewer";
 
             this.Title = windowTitle;
 
-            folderLabel.Content = $"Folder: \"{root}\"";
+            folderLabel.Content = $"Folder: \"{openedPath}\"";
         }
 
         protected override void OnClosed(EventArgs e)
