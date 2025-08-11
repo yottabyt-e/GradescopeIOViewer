@@ -15,6 +15,7 @@ namespace GradescopeIOViewer
 
         string openedPath;
         string[] roots;
+        bool[] rootsShown;
         public ObservableCollection<string> names = new ObservableCollection<string> { };
         List<string> inputs = new List<string> { };
         List<string> outputs = new List<string> { };
@@ -38,6 +39,18 @@ namespace GradescopeIOViewer
 
             string name = (string)e.AddedItems[0];
             int index = names.IndexOf(name);
+
+            if (name.StartsWith("➕") || name.StartsWith("➖"))
+            {
+                // Project folded / unfolded
+                int projectIndex = names.Where(n => n.StartsWith("➕") || n.StartsWith("➖")).ToList().IndexOf(name);
+                rootsShown[projectIndex] = !rootsShown[projectIndex];
+                UpdateData();
+
+                if (e.RemovedItems.Count != 0) CasesBox.SelectedIndex = names.IndexOf((string)e.RemovedItems[0]);
+                else CasesBox.SelectedIndex = -1;
+                return;
+            }
 
             inputText.Text = inputs[index];
             outputText.Text = outputs[index];
@@ -81,6 +94,7 @@ namespace GradescopeIOViewer
                 }
 
                 roots = validDirectories.ToArray();
+                rootsShown = Enumerable.Repeat(false, roots.Length).ToArray();
                 openedPath = openFileDialogue.FileName;
                 UpdateData();
             }
@@ -115,14 +129,25 @@ namespace GradescopeIOViewer
             inputs.Clear();
             outputs.Clear();
 
+            int i = 0;
             foreach (string root in roots)
             {
+                bool isShown = roots.Length == 1 || rootsShown[i++];
+                if (roots.Length != 1)
+                {
+                    names.Add((isShown ? "➖ " : "➕ ") + root.Split("\\").Last());
+                    inputs.Add("");
+                    outputs.Add("");
+                }
+                if (!isShown) continue;
+
                 string[] files = Directory.GetFiles(root + "\\Inputs");
 
                 foreach (string file in files)
                 {
                     string fileName = file.Substring((root + "\\Inputs\\").Length);
                     string name = fileName.Substring(0, fileName.Length - 4);
+                    if (roots.Length != 1) name = "└─ " + name;
 
                     string refOutputPath = root + "\\RefOutputs\\RefOutput_" + fileName;
 
