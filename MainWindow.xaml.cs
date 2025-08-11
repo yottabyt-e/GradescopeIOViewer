@@ -63,9 +63,7 @@ namespace GradescopeIOViewer
 
             if (result == true)
             {
-                openedPath = openFolderDialog.FolderName;
-                roots = [openFolderDialog.FolderName];
-                UpdateData();
+                LoadFolder(openFolderDialog.FolderName, openFolderDialog.FolderName, "folder");
             }
         }
 
@@ -84,20 +82,25 @@ namespace GradescopeIOViewer
 
                 ZipFile.ExtractToDirectory(openFileDialogue.FileName, tempPath);
 
-                List<string> validDirectories = (new string[] { tempPath }.Concat(Directory.GetDirectories(tempPath)))
+                LoadFolder(tempPath, openFileDialogue.FileName, "archive");
+            }
+        }
+
+        private void LoadFolder(string path, string name, string type)
+        {
+            List<string> validDirectories = (new string[] { path }.Concat(Directory.GetDirectories(path)))
                     .Where(dir => Directory.Exists(dir + "\\Inputs") && Directory.Exists(dir + "\\RefOutputs"))
                     .ToList();
-                if (validDirectories.Count == 0)
-                {
-                    MessageBox.Show("The selected archive does not contain any valid tasks.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                roots = validDirectories.ToArray();
-                rootsShown = Enumerable.Repeat(false, roots.Length).ToArray();
-                openedPath = openFileDialogue.FileName;
-                UpdateData();
+            if (validDirectories.Count == 0)
+            {
+                MessageBox.Show($"The selected {type} does not contain any valid test cases.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
             }
+
+            roots = validDirectories.ToArray();
+            rootsShown = Enumerable.Repeat(false, roots.Length).ToArray();
+            openedPath = name;
+            UpdateData();
         }
 
         private void UpdateData()
