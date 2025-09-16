@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using GradescopeIOViewer.tests;
+using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.IO.Compression;
@@ -20,6 +21,7 @@ namespace GradescopeIOViewer
         public ObservableCollection<string> names = new ObservableCollection<string> { };
         List<string> inputs = new List<string> { };
         List<string> outputs = new List<string> { };
+        string?[]? testResults;
 
         public MainWindow()
         {
@@ -70,6 +72,8 @@ namespace GradescopeIOViewer
 
         private void ButtonOpenArchive_Click(object sender, RoutedEventArgs e)
         {
+            if (testResults != null && testResults.Count(e => e == null) > 0) return;
+
             OpenFileDialog openFileDialogue = new OpenFileDialog()
             {
                 Filter = "Zip Archives (*.zip)|*.zip"
@@ -89,6 +93,8 @@ namespace GradescopeIOViewer
 
         private void ButtonSelectExe_Click(object sender, RoutedEventArgs e)
         {
+            if (testResults != null && testResults.Count(e => e == null) > 0) return;
+
             OpenFileDialog openFileDialogue = new OpenFileDialog()
             {
                 Filter = "Executables (*.exe)|*.exe"
@@ -122,6 +128,7 @@ namespace GradescopeIOViewer
             roots = validDirectories.ToArray();
             rootsShown = Enumerable.Repeat(false, roots.Length).ToArray();
             openedPath = name;
+            testResults = null;
             UpdateData();
             UpdateTestStatus();
         }
@@ -194,6 +201,31 @@ namespace GradescopeIOViewer
             this.Title = windowTitle;
 
             folderLabel.Content = $"Folder: \"{openedPath}\"";
+        }
+
+        private void ButtonRunTests_Click(object sender, RoutedEventArgs e)
+        {
+            if (selectedExe == null || outputs.Count == 0) return;
+            if (testResults != null && testResults.Count(e => e == null) > 0) return;
+
+            testResults = new string[outputs.Count];
+            btnOpenFolder.IsEnabled = false;
+            btnOpenArchive.IsEnabled = false;
+            btnChangeExeLoc.IsEnabled = false;
+            btnRunTests.IsEnabled = false;
+
+            TestManager.runTests(testResults, selectedExe, inputs, outputs, i => {
+                System.Diagnostics.Debug.WriteLine(i + " complete.");
+                Dispatcher.Invoke(() => {
+                    if (testResults != null && testResults.Count(e => e == null) == 0)
+                    {
+                        btnOpenFolder.IsEnabled = true;
+                        btnOpenArchive.IsEnabled = true;
+                        btnChangeExeLoc.IsEnabled = true;
+                        btnRunTests.IsEnabled = true;
+                    }
+                });
+            });
         }
 
         protected override void OnClosed(EventArgs e)
