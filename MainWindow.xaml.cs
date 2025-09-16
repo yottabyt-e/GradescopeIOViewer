@@ -215,7 +215,6 @@ namespace GradescopeIOViewer
             btnRunTests.IsEnabled = false;
 
             TestManager.runTests(testResults, selectedExe, inputs, outputs, i => {
-                System.Diagnostics.Debug.WriteLine(i + " complete.");
                 Dispatcher.Invoke(() => {
                     if (testResults != null && testResults.Count(e => e == null) == 0)
                     {
