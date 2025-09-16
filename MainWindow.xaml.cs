@@ -14,6 +14,7 @@ namespace GradescopeIOViewer
     {
 
         string openedPath;
+        string selectedExe;
         string[] roots;
         bool[] rootsShown;
         public ObservableCollection<string> names = new ObservableCollection<string> { };
@@ -86,6 +87,27 @@ namespace GradescopeIOViewer
             }
         }
 
+        private void ButtonSelectExe_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialogue = new OpenFileDialog()
+            {
+                Filter = "Executables (*.exe)|*.exe"
+            };
+            bool? result = openFileDialogue.ShowDialog();
+
+            if (result == true)
+            {
+                selectedExe = openFileDialogue.FileName;
+                executableLabel.Content = "Executable: \"" + selectedExe + "\"";
+                UpdateTestStatus();
+            }
+        }
+
+        private void UpdateTestStatus()
+        {
+            btnRunTests.IsEnabled = selectedExe != null && outputs.Count > 0;
+        }
+
         private void LoadFolder(string path, string name, string type)
         {
             List<string> validDirectories = (new string[] { path }.Concat(Directory.GetDirectories(path)))
@@ -101,6 +123,7 @@ namespace GradescopeIOViewer
             rootsShown = Enumerable.Repeat(false, roots.Length).ToArray();
             openedPath = name;
             UpdateData();
+            UpdateTestStatus();
         }
 
         private void UpdateData()
