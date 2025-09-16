@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using System.Text;
 
 namespace GradescopeIOViewer.tests
@@ -35,14 +34,12 @@ namespace GradescopeIOViewer.tests
 
             if (!string.IsNullOrEmpty(input))
             {
-                using (StreamWriter sw = process.StandardInput)
+                string[] lines = input.Split('\n');
+                foreach (string line in lines)
                 {
-                    string[] lines = input.Split('\n');
-                    foreach (string line in lines)
-                    {
-                        sw.WriteLine(line);
-                    }
+                    process.StandardInput.WriteLine(line);
                 }
+                process.StandardInput.Flush();
             }
 
             process.BeginErrorReadLine();
@@ -54,11 +51,15 @@ namespace GradescopeIOViewer.tests
         {
             TestInstance test = new TestInstance(executable, input);
             await Task.WhenAny(test.processExitedTaskSource.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+            test.process.WaitForExit();
+            test.process.WaitForExit(100);
             return test;
         }
 
         void process_Exited(object? sender, EventArgs e)
         {
+            process.WaitForExit();
+            process.WaitForExit(100);
             processExitedTaskSource.SetResult(output.ToString());
         }
 
