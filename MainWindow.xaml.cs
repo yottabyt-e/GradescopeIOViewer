@@ -35,6 +35,8 @@ namespace GradescopeIOViewer
             {
                 inputText.Text = "";
                 outputText.Text = "";
+                actualOutputText.Text = "";
+                actualOutputText.Visibility = Visibility.Collapsed;
                 return;
             }
 
@@ -55,6 +57,18 @@ namespace GradescopeIOViewer
 
             inputText.Text = inputs[index];
             outputText.Text = outputs[index];
+
+            // Show actual output only if failed test is selected
+            if (caseItem.Color == Brushes.Red && testResults != null && testResults[index] != null)
+            {
+                actualOutputText.Text = testResults[index];
+                actualOutputText.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                actualOutputText.Text = "";
+                actualOutputText.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void ButtonOpenFolder_Click(object sender, RoutedEventArgs e)
