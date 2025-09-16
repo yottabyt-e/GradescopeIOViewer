@@ -63,8 +63,7 @@ namespace GradescopeIOViewer
             {
                 actualOutputText.Text = testResults[index];
                 actualOutputText.Visibility = Visibility.Visible;
-            }
-            else
+            } else
             {
                 actualOutputText.Text = "";
                 actualOutputText.Visibility = Visibility.Collapsed;
@@ -239,14 +238,6 @@ namespace GradescopeIOViewer
                 Dispatcher.Invoke(() => {
                     if (testResults != null)
                     {
-                        if (i == 0)
-                        {
-                            System.Diagnostics.Debug.WriteLine("===");
-                            System.Diagnostics.Debug.WriteLine(testResults[i]);
-                            System.Diagnostics.Debug.WriteLine("---");
-                            System.Diagnostics.Debug.WriteLine(outputs[i]);
-                            System.Diagnostics.Debug.WriteLine("===");
-                        }
                         names[i].Color = (testResults[i] == outputs[i] ||
                         testResults[i].TrimEnd('\r', '\n') == outputs[i].TrimEnd('\r', '\n')  // New lines are sometimes added to the end of the results / output that are inconsequential
                         ) ? Brushes.Green : Brushes.Red;
