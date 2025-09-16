@@ -55,7 +55,7 @@
         </TextBox>
         <TextBox Grid.Column="2" Grid.Row="3" Name="actualOutputText" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed"/>
         <Label Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="4">
-            "L's Gradescope I/O Viewer" is in no way associated with Gradescope or Turnitin, LLC.
+            "L's Gradescope I/O Viewer" is in no way associated with Gradescope or Turnitin, LLC.  Test results may not match gradescope results.
         </Label>
     </Grid>
 </Window>
