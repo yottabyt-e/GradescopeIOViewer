@@ -222,6 +222,12 @@ namespace GradescopeIOViewer
                         btnOpenArchive.IsEnabled = true;
                         btnChangeExeLoc.IsEnabled = true;
                         btnRunTests.IsEnabled = true;
+                        btnRunTests.Content = "Run Tests";
+                    } else
+                    {
+                        int total = testResults.Count();
+                        int remaining = testResults.Count(e => e == null);
+                        btnRunTests.Content = (total - remaining) + "/" + total;
                     }
                 });
             });
