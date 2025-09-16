@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace GradescopeIOViewer
 {
@@ -13,12 +14,11 @@ namespace GradescopeIOViewer
     /// </summary>
     public partial class MainWindow : Window
     {
-
         string openedPath;
         string selectedExe;
         string[] roots;
         bool[] rootsShown;
-        public ObservableCollection<string> names = new ObservableCollection<string> { };
+        public ObservableCollection<CaseItem> names = new ObservableCollection<CaseItem> { };
         List<string> inputs = new List<string> { };
         List<string> outputs = new List<string> { };
         string?[]? testResults;
@@ -26,7 +26,6 @@ namespace GradescopeIOViewer
         public MainWindow()
         {
             InitializeComponent();
-
             CasesBox.ItemsSource = names;
         }
 
@@ -36,21 +35,20 @@ namespace GradescopeIOViewer
             {
                 inputText.Text = "";
                 outputText.Text = "";
-
                 return;
             }
 
-            string name = (string)e.AddedItems[0];
-            int index = names.IndexOf(name);
+            CaseItem caseItem = (CaseItem)e.AddedItems[0];
+            int index = names.IndexOf(caseItem);
 
-            if (name.StartsWith("➕") || name.StartsWith("➖"))
+            if (caseItem.Name.StartsWith("➕") || caseItem.Name.StartsWith("➖"))
             {
                 // Project folded / unfolded
-                int projectIndex = names.Where(n => n.StartsWith("➕") || n.StartsWith("➖")).ToList().IndexOf(name);
+                int projectIndex = names.Where(n => n.Name.StartsWith("➕") || n.Name.StartsWith("➖")).ToList().IndexOf(caseItem);
                 rootsShown[projectIndex] = !rootsShown[projectIndex];
                 UpdateData();
 
-                if (e.RemovedItems.Count != 0) CasesBox.SelectedIndex = names.IndexOf((string)e.RemovedItems[0]);
+                if (e.RemovedItems.Count != 0) CasesBox.SelectedIndex = names.IndexOf((CaseItem)e.RemovedItems[0]);
                 else CasesBox.SelectedIndex = -1;
                 return;
             }
@@ -128,7 +126,7 @@ namespace GradescopeIOViewer
             roots = validDirectories.ToArray();
             rootsShown = Enumerable.Repeat(false, roots.Length).ToArray();
             openedPath = name;
-            testResults = null;
+            ResetTestResults();
             UpdateData();
             UpdateTestStatus();
         }
@@ -168,7 +166,7 @@ namespace GradescopeIOViewer
                 bool isShown = roots.Length == 1 || rootsShown[i++];
                 if (roots.Length != 1)
                 {
-                    names.Add((isShown ? "➖ " : "➕ ") + root.Split("\\").Last());
+                    names.Add(new CaseItem((isShown ? "➖ " : "➕ ") + root.Split("\\").Last(), Brushes.Black));
                     inputs.Add("");
                     outputs.Add("");
                 }
@@ -189,7 +187,7 @@ namespace GradescopeIOViewer
                         continue;
                     }
 
-                    names.Add(name);
+                    names.Add(new CaseItem(name, Brushes.Black));
                     inputs.Add(File.ReadAllText(file));
                     outputs.Add(File.ReadAllText(refOutputPath));
                 }
@@ -199,8 +197,16 @@ namespace GradescopeIOViewer
             string windowTitle = $"\"{pathArray[pathArray.Length - 1]}\" - L's Gradescope I/O Viewer";
 
             this.Title = windowTitle;
-
             folderLabel.Content = $"Folder: \"{openedPath}\"";
+        }
+
+        private void ResetTestResults()
+        {
+            testResults = null;
+            foreach (var item in names)
+            {
+                item.Color = Brushes.Black;
+            }
         }
 
         private void ButtonRunTests_Click(object sender, RoutedEventArgs e)
@@ -208,6 +214,7 @@ namespace GradescopeIOViewer
             if (selectedExe == null || outputs.Count == 0) return;
             if (testResults != null && testResults.Count(e => e == null) > 0) return;
 
+            ResetTestResults();
             testResults = new string[outputs.Count];
             btnOpenFolder.IsEnabled = false;
             btnOpenArchive.IsEnabled = false;
@@ -216,18 +223,32 @@ namespace GradescopeIOViewer
 
             TestManager.runTests(testResults, selectedExe, inputs, outputs, i => {
                 Dispatcher.Invoke(() => {
-                    if (testResults != null && testResults.Count(e => e == null) == 0)
+                    if (testResults != null)
                     {
-                        btnOpenFolder.IsEnabled = true;
-                        btnOpenArchive.IsEnabled = true;
-                        btnChangeExeLoc.IsEnabled = true;
-                        btnRunTests.IsEnabled = true;
-                        btnRunTests.Content = "Run Tests";
-                    } else
-                    {
-                        int total = testResults.Count();
-                        int remaining = testResults.Count(e => e == null);
-                        btnRunTests.Content = (total - remaining) + "/" + total;
+                        if (i == 0)
+                        {
+                            System.Diagnostics.Debug.WriteLine("===");
+                            System.Diagnostics.Debug.WriteLine(testResults[i]);
+                            System.Diagnostics.Debug.WriteLine("---");
+                            System.Diagnostics.Debug.WriteLine(outputs[i]);
+                            System.Diagnostics.Debug.WriteLine("===");
+                        }
+                        names[i].Color = (testResults[i] == outputs[i] ||
+                        testResults[i].TrimEnd('\r', '\n') == outputs[i].TrimEnd('\r', '\n')  // New lines are sometimes added to the end of the results / output that are inconsequential
+                        ) ? Brushes.Green : Brushes.Red;
+                        if (testResults.Count(e => e == null) == 0)
+                        {
+                            btnOpenFolder.IsEnabled = true;
+                            btnOpenArchive.IsEnabled = true;
+                            btnChangeExeLoc.IsEnabled = true;
+                            btnRunTests.IsEnabled = true;
+                            btnRunTests.Content = "Run Tests";
+                        } else
+                        {
+                            int total = testResults.Count();
+                            int remaining = testResults.Count(e => e == null);
+                            btnRunTests.Content = (total - remaining) + "/" + total;
+                        }
                     }
                 });
             });

@@ -51,7 +51,11 @@
         </Label>
 
         <ListBox Grid.Column="0" Grid.Row="2" x:Name="CasesBox" Width="225" Height="Auto" SelectionChanged="OpenCase" SelectionMode="Single">
-            
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}" Foreground="{Binding Color}"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
         </ListBox>
 
         <TextBox Grid.Column="1" Grid.Row="2" Name="inputText" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
